@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emon's Private Diary - Polished Premium</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons (hand) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* CSS Variables for a cohesive premium theme */
@@ -32,10 +31,16 @@
         }
 
         /* Base Styles */
-        body {
-            font-family: 'Poppins', sans-serif;
+        html, body {
+            height: 100%; /* Ensure html and body take full height */
             margin: 0;
             padding: 0;
+            overflow: hidden; /* Hide body scrollbar, manage scrolling within diary */
+            overscroll-behavior-y: contain; /* Prevents pull-to-refresh on mobile */
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
             min-height: 100vh;
             overflow-x: hidden; /* Prevent body scroll */
             display: flex;
@@ -390,6 +395,7 @@
             scroll-snap-type: x mandatory; /* Snap to individual items */
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
+            /* touch-action is now handled by content-panel/media-section */
         }
 
         /* Hide default scrollbar for a cleaner look */
@@ -419,9 +425,10 @@
             opacity: 0;
             transform: translateY(20px);
             animation: entryFadeIn 1.5s ease-out forwards;
-            overflow-y: auto; /* Allow vertical scrolling within a panel */
-            scrollbar-width: thin;
-            scrollbar-color: var(--accent-color) transparent;
+            overflow-y: scroll; /* Explicitly set to 'scroll' to always show scrollbar if content overflows */
+            scrollbar-width: thin; /* For Firefox */
+            scrollbar-color: var(--accent-color) transparent; /* For Firefox */
+            touch-action: pan-x pan-y; /* Allow both horizontal and vertical panning/scrolling */
         }
         /* Staggered animation for panels */
         .content-panel:nth-child(1) { animation-delay: 0.2s; }
@@ -432,6 +439,8 @@
         .content-panel:nth-child(6) { animation-delay: 1.2s; }
         .content-panel:nth-child(7) { animation-delay: 1.4s; }
         .content-panel:nth-child(8) { animation-delay: 1.6s; }
+        .content-panel:nth-child(9) { animation-delay: 1.8s; } /* New panel */
+        .content-panel:nth-child(10) { animation-delay: 2.0s; } /* New panel */
 
         .content-panel:hover {
             background: rgba(255, 255, 255, 0.3); /* More pronounced hover effect */
@@ -464,22 +473,72 @@
                 -2px 2px 5px rgba(0, 0, 0, 0.15) inset;
         }
 
-        /* Custom Scrollbar for content-panel */
+        /* Custom Scrollbar for content-panel (Webkit - Chrome, Safari) */
         .content-panel::-webkit-scrollbar {
-            width: 8px;
+            width: 8px; /* Thin scrollbar */
+            background: transparent; /* Make the scrollbar area transparent */
         }
         .content-panel::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.08); /* Slightly darker track */
+            background: transparent; /* Make track transparent */
             border-radius: 10px;
         }
         .content-panel::-webkit-scrollbar-thumb {
-            background: var(--accent-color);
-            border-radius: 10px;
+            background: rgba(233, 30, 99, 0.6); /* Use accent color with transparency */
+            border-radius: 10px; /* Rounded ends */
+            border: none; /* Remove border for a cleaner look */
         }
         .content-panel::-webkit-scrollbar-thumb:hover {
-            background: var(--secondary-accent);
+            background: var(--accent-color); /* Solid accent color on hover */
+        }
+        /* Hide scrollbar buttons (arrows) if present, for a cleaner look */
+        .content-panel::-webkit-scrollbar-button {
+            display: none;
         }
 
+        /* Vertical Scroll Buttons - Re-added and styled */
+        .vertical-scroll-controls {
+            position: absolute;
+            right: 20px; /* Position on the right side of the panel */
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10; /* Ensure buttons are above content */
+            opacity: 0; /* Hidden by default, controlled by JS */
+            pointer-events: none; /* Not clickable when hidden */
+            transition: opacity 0.3s ease;
+        }
+
+        .scroll-button {
+            background: rgba(255, 255, 255, 0.3); /* Semi-transparent glass background */
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%; /* Circular buttons */
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            color: var(--accent-color); /* Icon color */
+            font-size: 1.2em;
+            transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .scroll-button:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Specific button positioning within the control group */
+        .scroll-up {
+            margin-bottom: 5px; /* Space between buttons */
+        }
+        .scroll-down {
+            margin-top: 5px;
+        }
 
         /* Header Styling (within content-panel) */
         .diary-header {
@@ -597,7 +656,7 @@
             border-radius: 25px; /* More rounded */
             box-shadow: 0 12px 45px var(--shadow-color); /* Enhanced shadow */
             border: 1px solid var(--glass-border);
-            overflow-y: auto; /* ALLOW VERTICAL SCROLLING FOR MEDIA SECTION */
+            overflow-y: scroll; /* Explicitly set to 'scroll' to always show scrollbar if content overflows */
             position: relative;
             width: 100%; /* Ensure it takes full width of its panel */
             height: 100%; /* Ensure it takes full height of its panel */
@@ -607,6 +666,7 @@
             align-items: center; /* Center horizontally */
             transition: background 0.3s ease, box-shadow 0.3s ease;
             box-sizing: border-box; /* Include padding in width/height */
+            touch-action: pan-x pan-y; /* ALLOW BOTH HORIZONTAL AND VERTICAL SCROLLING */
         }
         .media-section:hover {
             background: rgba(255, 255, 255, 0.35); /* More opaque on hover */
@@ -713,6 +773,17 @@
             .slide-hint i {
                 font-size: 3em;
             }
+            .vertical-scroll-controls {
+                right: 10px; /* Adjust for smaller screens */
+            }
+            .scroll-button {
+                width: 35px;
+                height: 35px;
+                font-size: 1em;
+            }
+            .content-panel::-webkit-scrollbar {
+                width: 6px; /* Slightly thinner scrollbar on smaller screens */
+            }
         }
 
         @media (max-width: 768px) {
@@ -765,11 +836,21 @@
             .entry-content { font-size: clamp(0.9em, 2vw, 1.1em); line-height: 1.7; }
             .media-section { padding: 25px; }
             .media-caption { font-size: clamp(0.8em, 1.8vw, 1em); }
+            .vertical-scroll-controls {
+                right: 5px; /* Further adjust for very small screens */
+            }
+            .scroll-button {
+                width: 30px;
+                height: 30px;
+                font-size: 0.9em;
+            }
+            .content-panel::-webkit-scrollbar {
+                width: 4px; /* Even thinner scrollbar on very small screens */
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Animated background elements -->
     <div class="floating-orbs">
         <div class="orb"></div>
         <div class="orb"></div>
@@ -795,19 +876,15 @@
 
     <div class="diary-wrapper">
         <div class="diary-content-container" id="diary-content-container">
-            <!-- Content panels will be dynamically added here by JS -->
+            </div>
+
         </div>
 
-        <!-- NO NAVIGATION BUTTONS HERE - Navigation is by sliding and hint -->
-    </div>
-
-    <!-- Slide Hint (Hand icon + text) -->
     <div class="slide-hint" id="slide-hint">
         <i class="fas fa-hand-point-right"></i>
         <span>Slide to change page</span>
     </div>
 
-    <!-- Hidden container for all diary entries (template) -->
     <div id="all-diary-data" style="display: none;">
         <div class="content-data">
             <div class="diary-header">
@@ -832,6 +909,10 @@
                     <p>My friend posted a video titled "This is Line, This is Wine." Before the video finished, I guessed the last one was "You are mine?" and commented it. After some hours, she replied, "No", so I just says as a fun. "Aww, darling, you broke my heart.💔🥹"</p>
                 </div>
             </div>
+            <div class="vertical-scroll-controls">
+                <button class="scroll-button scroll-up" aria-label="Scroll up"><i class="fas fa-chevron-up"></i></button>
+                <button class="scroll-button scroll-down" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></button>
+            </div>
         </div>
 
         <div class="content-data">
@@ -839,26 +920,50 @@
                 <img src="https://raw.githubusercontent.com/emoneditz/27-06-2025-Lamiya/main/IMG_20250710_225129.jpg" alt="Screenshot of 'This is Line, This is Wine' comment" onerror="this.onerror=null;this.src='https://placehold.co/800x550/ff9a9e/333333?text=Image+Not+Found';" loading="lazy">
                 <p class="media-caption">The start of an interesting conversation.</p>
             </div>
+            <div class="vertical-scroll-controls">
+                <button class="scroll-button scroll-up" aria-label="Scroll up"><i class="fas fa-chevron-up"></i></button>
+                <button class="scroll-button scroll-down" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></button>
+            </div>
         </div>
 
         <div class="content-data">
             <div class="diary-entry">
                 <span class="entry-date">June 25, 2025</span>
-                <h2 class="entry-title">Making Friends & Mood Swings</h2>
+                <h2 class="entry-title">Making Friends & Mood Swings (Part 1)</h2>
                 <div class="entry-content">
                     <p>So this acting was continued some more replies after that. She suddenly got serious, asking "Now where?", then I just clarified, "It's just a joke... 😼"</p>
                     <p>On June 25th, she posted about making friends, where they make friends by asking. So I just commented, "Comment, is this how you guys make friends?" Then the comment converted into a chat.</p>
-                    <p>The next day, an unknown person commented, "tora eto energy koi pas." So she replied as a joke, "Ei baje celetar Jonno Sob hoice." Huh? That's where everything's gone wrong. I replied, "act like I hurt." Then she suddenly got serious and wanted to remove all the comments.</p>
-                    <p class="italic-reflection">[[This girl has insane mood swings. Her future husband will get cooked 100%? Or maybe lucky? Because she has no male friend, and as I remember, she also cooked good. So her husband is lucky cause he needs to tolerate something to get something, isn't it what's called fair?]]</p>
-                    <p class="italic-reflection">[[I wish my wife also liked this girl, cause who doesn't huh?.. .]]</p>
+                    <p>The next day, an unknown person commented, "tora eto energy koi pas." So she replied as a joke, "Ei baje celetar Jonno Sob hoice." Huh? That's where everything's gone wrong. I replied, "act like I hurt." Then she suddenly got serious and wanted to remove all the comments. </p>
                 </div>
+            </div>
+            <div class="vertical-scroll-controls">
+                <button class="scroll-button scroll-up" aria-label="Scroll up"><i class="fas fa-chevron-up"></i></button>
+                <button class="scroll-button scroll-down" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></button>
             </div>
         </div>
 
         <div class="content-data">
+            <div class="diary-entry">
+                <span class="entry-date">June 25, 2025</span>
+                <h2 class="entry-title">Making Friends & Mood Swings (Part 2)</h2>
+                <div class="entry-content">
+                    <p><span class="italic-reflection">[[This girl has insane mood swings. Her future husband will get cooked 100%? Or maybe lucky? Because she has no male friend, and as I remember, she also cooked good. So her husband is lucky cause he needs to tolerate something to get something, isn't it what's called fair?]]</span></p>
+                    <p class="italic-reflection">[[I wish my wife also liked this girl, cause who doesn't huh?.. .]]</p>
+                </div>
+            </div>
+            <div class="vertical-scroll-controls">
+                <button class="scroll-button scroll-up" aria-label="Scroll up"><i class="fas fa-chevron-up"></i></button>
+                <button class="scroll-button scroll-down" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></button>
+            </div>
+        </div>
+        <div class="content-data">
             <div class="media-section">
                 <img src="https://raw.githubusercontent.com/emoneditz/27-06-2025-Lamiya/main/Screenshot_2025-06-24-18-36-44-97_f9ee0578fe1cc94de7482bd41accb329.jpg" alt="Screenshot of friend-making post comments" onerror="this.onerror=null;this.src='https://placehold.co/800x550/ff9a9e/333333?text=Image+Not+Found';" loading="lazy">
                 <p class="media-caption">The conversation that turned into a chat.</p>
+            </div>
+            <div class="vertical-scroll-controls">
+                <button class="scroll-button scroll-up" aria-label="Scroll up"><i class="fas fa-chevron-up"></i></button>
+                <button class="scroll-button scroll-down" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></button>
             </div>
         </div>
 
@@ -867,9 +972,13 @@
                 <span class="entry-date">June 26, 2025</span>
                 <h2 class="entry-title">Friendship Forged</h2>
                 <div class="entry-content">
-                    <p>Then I commented something, but she acted like she didn't see my comment. I know she has this habit. (Forgot to mention, she really wrote so many things by which indirectly meant me, maybe she hates me, huh?). Also, she changed her avatar banner.</p>
+                    <p>Then I commented something, but she acted like she didn't see my comment. I know she has this habit. <span class="italic-reflection">(Forgot to mention, she really wrote so many things that indirectly referred to me (maybe she hates me, huh?).)</span> Also, she changed her avatar banner.</p>
                     <p>So I just said, "I have something to tell, reply me." (Actually, I didn't know what to say after the incident, so I just proposed to be my friend.) At last, I made the friendship (which I never imagined, did I do the right thing?).</p>
                 </div>
+            </div>
+            <div class="vertical-scroll-controls">
+                <button class="scroll-button scroll-up" aria-label="Scroll up"><i class="fas fa-chevron-up"></i></button>
+                <button class="scroll-button scroll-down" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></button>
             </div>
         </div>
 
@@ -877,6 +986,10 @@
             <div class="media-section">
                 <img src="https://raw.githubusercontent.com/emoneditz/27-06-2025-Lamiya/main/Screenshot_2025-07-10-23-08-52-37_da12b4d69ba00bd9279f440202b88de5.jpg" alt="Screenshot of proposal to be friends" onerror="this.onerror=null;this.src='https://placehold.co/800x550/ff9a9e/333333?text=Image+Not+Found';" loading="lazy">
                 <p class="media-caption">The moment friendship was proposed.</p>
+            </div>
+            <div class="vertical-scroll-controls">
+                <button class="scroll-button scroll-up" aria-label="Scroll up"><i class="fas fa-chevron-up"></i></button>
+                <button class="scroll-button scroll-down" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></button>
             </div>
         </div>
 
@@ -889,12 +1002,20 @@
                     <p>Whatever, I don't know if my friendship will last or not. I just hope for something great in the future. Let's see if I did the right thing or wrong by making friends with a girl. My future will tell me.......</p>
                 </div>
             </div>
+            <div class="vertical-scroll-controls">
+                <button class="scroll-button scroll-up" aria-label="Scroll up"><i class="fas fa-chevron-up"></i></button>
+                <button class="scroll-button scroll-down" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></button>
+            </div>
         </div>
 
         <div class="content-data">
             <div class="diary-header">
                 <h1>© Emon's Diary</h1>
                 <p>Thank you for reading my personal journey.</p>
+            </div>
+            <div class="vertical-scroll-controls">
+                <button class="scroll-button scroll-up" aria-label="Scroll up"><i class="fas fa-chevron-up"></i></button>
+                <button class="scroll-button scroll-down" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></button>
             </div>
         </div>
 
@@ -919,12 +1040,19 @@
                 panel.innerHTML = dataNode.innerHTML; // Copy the inner HTML content
                 panel.setAttribute('data-index', index); // Store index for navigation
                 diaryContentContainer.appendChild(panel);
+
+                // Add event listener for vertical scrolling on this panel
+                panel.addEventListener('scroll', updateVerticalScrollButtons);
             });
 
             // After rendering, ensure we scroll to the current index to show the correct page
             scrollToPanel(currentPanelIndex);
             // Explicitly call updateSlideHintVisibility after initial rendering and scroll
             updateSlideHintVisibility();
+            // Initial update for vertical scroll buttons
+            updateVerticalScrollButtons();
+            // Setup click listeners for the new buttons
+            setupScrollButtonListeners();
         }
 
         // Function to update slide hint visibility based on current scroll position/index
@@ -955,18 +1083,19 @@
                     left: targetPanel.offsetLeft,
                     behavior: 'smooth'
                 });
+                // When a new page is scrolled to, reset its vertical scroll to top
+                targetPanel.scrollTop = 0; 
             }
         }
 
-        // Debounced scroll listener for performance and accurate current panel detection
-        let scrollDebounceTimeout;
+        // Debounced scroll listener for performance and accurate current panel detection (horizontal scroll)
+        let horizontalScrollDebounceTimeout;
         diaryContentContainer.addEventListener('scroll', () => {
-            clearTimeout(scrollDebounceTimeout);
-            scrollDebounceTimeout = setTimeout(() => {
+            clearTimeout(horizontalScrollDebounceTimeout);
+            horizontalScrollDebounceTimeout = setTimeout(() => {
                 const panels = Array.from(diaryContentContainer.querySelectorAll('.content-panel'));
                 if (panels.length === 0) return;
 
-                // Calculate which panel is currently the most "snapped" into view
                 const scrollLeft = diaryContentContainer.scrollLeft;
                 let newPanelIndex = 0;
                 let minDistance = Infinity;
@@ -979,10 +1108,10 @@
                     }
                 });
                 
-                // Only update currentPanelIndex if it has actually changed
                 if (currentPanelIndex !== newPanelIndex) {
                     currentPanelIndex = newPanelIndex;
                     updateSlideHintVisibility(); // Update hint immediately on panel change
+                    updateVerticalScrollButtons(); // Update vertical buttons for the new active panel
                 }
                 hideSlideHint(); // Hide hint on user scroll
             }, 100); // 100ms debounce
@@ -1003,6 +1132,65 @@
             if (slideHint && !slideHint.classList.contains('hidden')) {
                 slideHint.classList.add('hidden');
             }
+        }
+
+        // Function to update visibility of vertical scroll buttons for all panels
+        function updateVerticalScrollButtons() {
+            const panels = Array.from(diaryContentContainer.querySelectorAll('.content-panel'));
+            panels.forEach((panel, index) => {
+                const scrollControls = panel.querySelector('.vertical-scroll-controls');
+                if (!scrollControls) return;
+
+                const scrollUpBtn = panel.querySelector('.scroll-up');
+                const scrollDownBtn = panel.querySelector('.scroll-down');
+
+                if (!scrollUpBtn || !scrollDownBtn) return; // Guard clause
+
+                if (index === currentPanelIndex) {
+                    // This is the active panel
+                    const isScrollable = panel.scrollHeight > panel.clientHeight;
+                    const atTop = panel.scrollTop <= 1; // Small tolerance for float issues
+                    const atBottom = panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 1; // Small tolerance
+
+                    if (isScrollable) {
+                        scrollControls.style.opacity = '1';
+                        scrollControls.style.pointerEvents = 'auto';
+
+                        scrollUpBtn.style.opacity = atTop ? '0' : '1';
+                        scrollUpBtn.style.pointerEvents = atTop ? 'none' : 'auto';
+
+                        scrollDownBtn.style.opacity = atBottom ? '0' : '1';
+                        scrollDownBtn.style.pointerEvents = atBottom ? 'none' : 'auto';
+                    } else {
+                        // Not scrollable, hide all controls
+                        scrollControls.style.opacity = '0';
+                        scrollControls.style.pointerEvents = 'none';
+                    }
+                } else {
+                    // Not the active panel, hide its controls
+                    scrollControls.style.opacity = '0';
+                    scrollControls.style.pointerEvents = 'none';
+                }
+            });
+        }
+
+        // Function to set up click listeners for scroll buttons
+        function setupScrollButtonListeners() {
+            diaryContentContainer.querySelectorAll('.content-panel').forEach(panel => {
+                const scrollUpBtn = panel.querySelector('.scroll-up');
+                const scrollDownBtn = panel.querySelector('.scroll-down');
+
+                if (scrollUpBtn) {
+                    scrollUpBtn.onclick = () => {
+                        panel.scrollBy({ top: -panel.clientHeight * 0.7, behavior: 'smooth' }); // Scroll up by 70% of view
+                    };
+                }
+                if (scrollDownBtn) {
+                    scrollDownBtn.onclick = () => {
+                        panel.scrollBy({ top: panel.clientHeight * 0.7, behavior: 'smooth' }); // Scroll down by 70% of view
+                    };
+                }
+            });
         }
 
         document.addEventListener('DOMContentLoaded', () => {
